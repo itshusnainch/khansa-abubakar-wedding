@@ -562,12 +562,43 @@
   tick();
   setInterval(tick, 1000);
 
-  // Front-end only RSVP: show a thank-you note, no data is sent anywhere
+  // RSVP → email (FormSubmit): guest taps Send, the RSVP is emailed to
+  // missabubakar487@gmail.com. Nothing opens on the guest's phone and no
+  // phone number is used anywhere.
   document.getElementById('rsvp-form').addEventListener('submit', function (e) {
     e.preventDefault();
-    document.getElementById('thanks').style.display = 'block';
-    this.querySelector('button').disabled = true;
-    this.querySelector('button').textContent = 'RSVP Sent';
+    var form = this;
+    var btn = form.querySelector('button');
+    var thanks = document.getElementById('thanks');
+    var name = document.getElementById('name').value.trim();
+    var attending = (document.querySelector('input[name="attending"]:checked') || {}).value;
+    var guests = document.getElementById('guests').value;
+    var msg = document.getElementById('message').value.trim();
+    btn.disabled = true;
+    btn.textContent = 'Sending...';
+    var email = ['missabubakar487', '@gmail.com'].join('');
+    fetch('https://formsubmit.co/ajax/' + email, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+      body: JSON.stringify({
+        name: name,
+        attending: attending === 'yes' ? 'Joyfully Accepts' : 'Regretfully Declines',
+        guests: guests,
+        message: msg,
+        _subject: 'New RSVP — Khansa & Abubakar Wedding',
+        _captcha: 'false',
+        _template: 'table'
+      })
+    }).then(function (res) {
+      if (!res.ok) throw new Error('send failed');
+      thanks.style.display = 'block';
+      btn.textContent = 'RSVP Sent';
+    }).catch(function () {
+      thanks.textContent = 'Something went wrong — please try again.';
+      thanks.style.display = 'block';
+      btn.disabled = false;
+      btn.textContent = 'Send RSVP';
+    });
   });
 
   // Wishes: add the blessing to the wall, no data is sent anywhere
